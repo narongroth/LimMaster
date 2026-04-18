@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let genAI: GoogleGenAI | null = null;
+
+function getGenAI() {
+  if (!genAI) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API Key មិនទាន់មាននៅឡើយទេ។ សូមកំណត់វាក្នុង Environment Variables។");
+    }
+    genAI = new GoogleGenAI({ apiKey });
+  }
+  return genAI;
+}
 
 export interface LimitExercise {
   problem: string;
@@ -43,6 +54,7 @@ export async function generateExercises(
   const difficultyPrompt = difficulty ? `ដែលមានកម្រិតពិបាក: ${difficulty}` : "រួមបញ្ចូលកម្រិតពិបាកចម្រុះ (ងាយស្រួល, មធ្យម, ពិបាក)";
   const topicPrompt = topic ? `លើប្រធានបទ: ${topic}` : "ប្រធានបទអាចរួមមាន៖ លីមីតគ្រឹះ, អនន្ត, ច្បាប់ L'Hopital, លីមីតត្រីកោណមាត្រ ជាដើម";
 
+  const ai = getGenAI() as any;
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `បង្កើតលំហាត់គណនាលីមីត (lim) ចំនួន ${count} ${difficultyPrompt} ${topicPrompt}។
@@ -73,6 +85,7 @@ export async function generateExercises(
 }
 
 export async function scanLimitFromImage(base64Image: string): Promise<string> {
+  const ai = getGenAI() as any;
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: [
@@ -97,6 +110,7 @@ export async function scanLimitFromImage(base64Image: string): Promise<string> {
 }
 
 export async function solveLimit(problem: string): Promise<LimitSolution> {
+  const ai = getGenAI() as any;
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `ដោះស្រាយលំហាត់លីមីតខាងក្រោមជាជំហានៗ៖ ${problem}។
